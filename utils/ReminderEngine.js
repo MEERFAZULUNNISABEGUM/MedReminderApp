@@ -5,13 +5,20 @@ import notifee, { AndroidImportance, AndroidVisibility, TriggerType, RepeatFrequ
 
 
 import * as Notifications from 'expo-notifications';
-export async function scheduleNotification() {
+export async function scheduleMedicineReminder(medicine) {
+  const { hour, minute } = medicine.time;
+
   await Notifications.scheduleNotificationAsync({
     content: {
       title: "💊 Medicine Reminder",
-      body: "Time to take your medicine!",
+      body: `Take ${medicine.name}`,
+      sound: true,
     },
-    trigger: { seconds: 5 },
+    trigger: {
+      hour,
+      minute,
+      repeats: true, // daily repeat
+    },
   });
 }
 // Configure Notifee for Android
