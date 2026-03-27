@@ -10,6 +10,7 @@ import { useToast } from '../../context/ToastContext';
 import { normalizeFrequency } from '../../utils/ReminderEngine';
 import { BACKEND_URL } from '../../constants/api';
 import { colors, spacing, radius, shadow } from '../../constants/theme';
+import { scheduleMedicineReminder } from '../../utils/ReminderEngine';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -144,26 +145,75 @@ export default function UploadScreen() {
         setPickerVisible(false);
     };
 
-    const handleSave = async () => {
-        if (medicinesList.length === 0) { showError('Add at least one medicine before saving.'); return; }
-        setSaving(true);
-        const today = new Date();
-        const finalMeds = medicinesList.map(m => {
-            const d = parseInt(m.duration);
-            let endDate = null;
-            if (!isNaN(d) && d > 0) { const e = new Date(today); e.setDate(today.getDate() + d); endDate = e.toISOString(); }
-            return { id: m.id, name: m.name, dosage: m.dosage || 'As directed', frequency: m.frequency, times: m.times, duration: !isNaN(d) && d > 0 ? `${d} days` : m.duration || 'Ongoing', startDate: today.toISOString(), endDate, type: 'pills' };
-        });
-        const success = await addPrescription({ imageUri: image, medicines: finalMeds });
-        setSaving(false);
-        if (success) {
-            showSuccess('Prescription saved! Reminders scheduled.');
-            setImage(null); setMedicinesList([]); setExtractedText('');
-            setTimeout(() => router.navigate('medicine-list'), 600);
-        } else {
-            showError('Failed to save prescription. Please try again.');
+const handleSave = async () => {
+    if (medicinesList.length === 0) {
+        showError('Add at least one medicine before saving.');
+        return;
+    }
+
+    setSaving(true);
+    const today = new Date();
+
+    const finalMeds = medicinesList.map(m => {
+        const d = parseInt(m.duration);
+        let endDate = null;
+
+        if (!isNaN(d) && d > 0) {
+            const e = new Date(today);
+            e.setDate(today.getDate() + d);
+            endDate = e.toISOString();
         }
-    };
+
+        return {
+            id: m.id,
+            name: m.name,
+            dosage: m.dosage || 'As directed',
+            frequency: m.frequency,
+            times: m.times,
+            duration: !isNaN(d) && d > 0 ? `${d} days` : m.duration || 'Ongoing',
+            startDate: today.toISOString(),
+            endDate,
+            type: 'pills'
+        };
+    });
+
+    // ✅ SAVE DATA
+    const success = await addPrescription({
+        imageUri: image,
+        medicines: finalMeds
+    });
+
+    // 🔥 NEW: SCHEDULE NOTIFICATIONS
+    if (success) {
+        try {
+            for (let med of finalMeds) {
+                for (let time of med.times) {
+                    const [hour, minute] = time.split(':').map(Number);
+
+                    await scheduleMedicineReminder({
+                        name: med.name,
+                        time: { hour, minute }
+                    });
+                }
+            }
+        } catch (err) {
+            console.log("Notification error:", err);
+        }
+    }
+
+    setSaving(false);
+
+    if (success) {
+        showSuccess('Prescription saved! Reminders scheduled.');
+        setImage(null);
+        setMedicinesList([]);
+        setExtractedText('');
+
+        setTimeout(() => router.navigate('medicine-list'), 600);
+    } else {
+        showError('Failed to save prescription. Please try again.');
+    }
+};
 
     return (
         <SafeAreaView style={styles.container}>
