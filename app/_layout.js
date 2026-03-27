@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { LogBox, AppRegistry, Platform } from 'react-native';
 import { useEffect } from 'react';
 import * as Notifications from 'expo-notifications';
@@ -25,12 +25,33 @@ Notifications.setNotificationHandler({
 });
 
 export default function RootLayout() {
+  const router = useRouter();
 
   useEffect(() => {
     setupNotifications();
+
+    // ✅ HANDLE NOTIFICATION CLICK (fix buffering)
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log("Notification clicked:", response);
+
+      router.push('/alarm');
+    });
+
+    // ✅ HANDLE APP CLOSED → OPEN FROM NOTIFICATION
+    const checkLastNotification = async () => {
+      const response = await Notifications.getLastNotificationResponseAsync();
+
+      if (response) {
+        router.push('/alarm');
+      }
+    };
+
+    checkLastNotification();
+
+    return () => subscription.remove();
   }, []);
 
-  // 🔥 SETUP FUNCTION (IMPORTANT)
+  // 🔥 SETUP FUNCTION
   async function setupNotifications() {
     // 1. Request permission
     const { status } = await Notifications.requestPermissionsAsync();
@@ -39,14 +60,15 @@ export default function RootLayout() {
       return;
     }
 
-    // 2. ANDROID CHANNEL (VERY IMPORTANT)
+    // 2. ANDROID CHANNEL (VERY IMPORTANT 🔥)
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('medicine-reminder', {
         name: 'Medicine Reminder',
         importance: Notifications.AndroidImportance.MAX,
         sound: 'default',
-        vibrationPattern: [0, 250, 250, 250],
+        vibrationPattern: [0, 300, 300, 300],
         lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        bypassDnd: true, // 🔥 IMPORTANT for better delivery
       });
     }
   }
