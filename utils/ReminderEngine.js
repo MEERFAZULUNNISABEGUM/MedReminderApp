@@ -3,6 +3,17 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import notifee, { AndroidImportance, AndroidVisibility, TriggerType, RepeatFrequency } from '@notifee/react-native';
 
+
+import * as Notifications from 'expo-notifications';
+export async function scheduleNotification() {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: "💊 Medicine Reminder",
+      body: "Time to take your medicine!",
+    },
+    trigger: { seconds: 5 },
+  });
+}
 // Configure Notifee for Android
 const setupNotifee = async () => {
     if (Platform.OS !== 'android') return;
