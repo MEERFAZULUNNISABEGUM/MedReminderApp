@@ -6,20 +6,20 @@ import notifee, { AndroidImportance, AndroidVisibility, TriggerType, RepeatFrequ
 import * as Notifications from 'expo-notifications';
 export async function scheduleMedicineReminder(medicine) {
   const { hour, minute } = medicine.time;
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: "💊 Medicine Reminder",
-      body: `Time to take ${medicine.name}`,
-      sound: 'default',
-      priority: Notifications.AndroidNotificationPriority.MAX, // ✅ ADD THIS
-    },
-    trigger: {
-      hour,
-      minute,
-      repeats: true,
-      channelId: 'medicine-reminder', // ✅ IMPORTANT
-    },
-  });
+await Notifications.scheduleNotificationAsync({
+  content: {
+    title: "💊 Medicine Reminder",
+    body: `Time to take ${medicine.name}`,
+    sound: 'default',
+    priority: Notifications.AndroidNotificationPriority.MAX, // ✅ ADD HERE
+  },
+  trigger: {
+    hour,
+    minute,
+    repeats: true,
+    channelId: 'medicine-reminder', // ✅ ADD HERE
+  },
+});
 }
 // Configure Notifee for Android
 const setupNotifee = async () => {
