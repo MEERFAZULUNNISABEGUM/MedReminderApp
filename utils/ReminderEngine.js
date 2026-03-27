@@ -3,21 +3,21 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import notifee, { AndroidImportance, AndroidVisibility, TriggerType, RepeatFrequency } from '@notifee/react-native';
 
-
 import * as Notifications from 'expo-notifications';
 export async function scheduleMedicineReminder(medicine) {
   const { hour, minute } = medicine.time;
-
   await Notifications.scheduleNotificationAsync({
     content: {
       title: "💊 Medicine Reminder",
-      body: `Take ${medicine.name}`,
-      sound: true,
+      body: `Time to take ${medicine.name}`,
+      sound: 'default',
+      priority: Notifications.AndroidNotificationPriority.MAX, // ✅ ADD THIS
     },
     trigger: {
       hour,
       minute,
-      repeats: true, // daily repeat
+      repeats: true,
+      channelId: 'medicine-reminder', // ✅ IMPORTANT
     },
   });
 }
